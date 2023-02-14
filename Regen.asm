@@ -1,74 +1,190 @@
 hirom
 
-org $01e078 ; Location in status application routine
-BEQ $24     ; branch to test status mode 3 instead of jump to return
-NOP         ; we wrote over a JMP so NOP the 3rd byte
+; Tech Handling Section
 
-org $01b93b ; Location of pointer for new status effect 07 "Regen" (RAM index)
-db $30, $d2 ; Little endian pointer to free space in the shrunken Healing effect routine
+; This hack allows Tech mode 00 (Healing) to also apply status effects. The mode 00 and 02 (Status) routines are re-written from scratch to be able to
+; work together. Modes 00 and 02 both pass control to a new routine that will resolve any conflicts in the meaning of the effect header bytes between
+; modes, since they are context-dependant. Mode 02 works the same as the base game. Mode 00 can read in four additional bytes to also apply a status.
 
-org $01d230 ; Location of free space in shrunken Healing effect routine
-JSL $c27df0 ; Execute Regen effect
-JSR $ebf8	; Load damage registers
-JSR $ec7f	; Apply damage registers to HP/MP
-RTS
+; Tech Mode 00 byte meaning: Tech mode, Healing Power, HP/MP healing, status mode, status bitflags, base success, bonus success, bit $20 always hit.
 
-org $c27df0 ; Free space
+org $cc21ab     ; Edit Marle's Aura effect header for demo purposes. Delete these two lines if you don't want Aura to set Regen.
+db $00, $05, $80, $02, $40, $00, $00, $20
+
+org $018a05     ; Write over the 2.5x Evade refresh subroutine for free space.
+rts             ; Failsafe for the 2.5x Evade ATB routine that still points here. 2.5x Evade is only used on Third Eye and this ATB tracking is unused.
+nop #75         ; This space gets used for the new FlowController routine.
+
+org $01d221     ; Write over the Tech mode 00 Healing routine.
+nop #29         ; We use this space to jump to FlowController, for the new healing routine, and for the Regen effect.
+
+org $01d267     ; Write over the Tech mode 02 Status Impact routine.
+nop #119        ; We use this space to jump to FlowController and for the new status impact routine.
+
+org $c18a06     ; Flow control for Healing and Status Impact Tech modes.
+FlowController:
+jsr $e9a3       ; Get attacker's stat block offset.
+.StartOfLoop
+jsr $e9b8       ; Get affected unit's stat block offset.
+lda $aee6       ; Load Tech mode.
+cmp #$00        ; If Tech mode == 00 Healing.
+bne .StatusMode ; Then continue, else branch to test 02 Status Impact.
+jsr $d224       ; Run healing routine.
+lda $aeea       ; Load status bitflag.
+cmp #$00        ; Continue if nonzero.
+beq .CheckIndex ; Else branch to loop.
+jsr $d1a4       ; Get Base/Bonus success chance.
+lda $16
+sta $1a         ; Store Base success chance to $1a.
+lda $18
+sta $1c         ; Store Bonus success byte to $1c.
+lda $aee9       ; Load status mode.
+sta $16         ; Store to $16.
+lda $aeea       ; Load status bitflag.
+sta $18         ; Store to $18.
+bra .ApplyStatus; Branch to apply status.
+.StatusMode
+jsr $d1a4       ; Get Base and Bonus success chance.
+ldx $16
+stx $1a         ; Store Base success chance to $1a.
+ldx $18
+stx $1c         ; Store Bonus success byte to $1c.
+jsr $d14f       ; Get status mode and status bitflag.
+.ApplyStatus
+jsr $d26a       ; Apply status.
+.CheckIndex
+jsr $d508       ; Load attack data.
+dec $ad8d       ; Decrement affected unit counter.
+lda $ad8d
+bne .StartOfLoop; Loop if nonzero.
+rts
+
+org $01d221     ; Tech mode 00 Healing.
+jmp $8a06       ; Pass control to flow control routine.
+Healing:        ; Start status routine.
+jsr $d132       ; Load attacker's Magic and byte 2,3 of effect header.
+jsr $da37       ; Apply healing.
+lda #$00
+sta $b200
+rts             ; Some bytes liberated here, but we make use of them for the Regen effect.
+
+org $01d267     ; Tech mode 02 Status Impact.
+jmp $8a06       ; Pass control to flow control routine.
+StatusImpact:   ; Start Status routine.
+lda $ae4d       ; Load special bitflags.
+bit #$20        ; Test always hits.
+bne .Effect     ; If set, branch to apply status.
+tdc
+ldx $b1f4
+lda $5e66,X     ; Load attacker's Magic.
+tax             ; Edit out the transfers to x here, superfluous.
+stx $0028       ; Store Magic.
+lda $1c         ; Load bonus success byte.
+tax
+stx $002a       ; Store bonus.
+jsr $c92a       ; Divide Magic / bonus.
+lda $2c         ; Load quotient.
+clc
+adc $1a         ; Add to base success chance.
+sta $1a         ; Store success chance.
+tdc
+tax
+lda #$64
+jsr $af22       ; Generate random value.
+cmp $1a         ; Compare random value to success chance.
+beq .Effect
+bcc .Effect     ; If value == or < success%, branch to apply status.
+.Miss
+jsr $d1b5       ; Else prepare miss.
+jsr $e8e2       ; Load miss animation flags? to damage register.
+lda #$80
+sta $b200
+bra .Return
+.Effect
+jsr $dbaa       ; Apply status.
+lda #$00
+sta $b200
+lda $16         ; $16 is zero here if everything went as planned, this is just copied faithfully from the original status routine.
+cmp #$80        ; Not sure why $16 would ever be #$80.
+beq .Miss
+.Return
+rts             ; 39 bytes liberated by moving some of the routine to FlowController.
+
+; Regen Section
+
+; This hack to implement HP Regen has several different sections. It makes use of some unused status ATB tracking. Regen is constant status 1 bit $40.
+; First we correct a bug in the Apply Status routine where status mode 02 returns early. Second we point status effect 07 (RAM index) at our new
+; routine. That pointer is used when the status's ATB hits zero. Third we write a compact routine using some of the free space liberated in the Tech
+; handing section. Fourth we write the actual Regen effect in some free space in bank $C2. Fifth we edit the routine that sets status timer references
+; at the start of battle to adjust the tick interval for Regen. This solution includes some logic to account for the player's Battle Speed setting.
+
+
+org $01e078 ; Location in Apply Status routine.
+beq $24     ; branch to test status mode 03 instead of jump to return.
+nop         ; we wrote over a JMP so NOP the 3rd byte.
+
+org $01b93b ; Location of pointer for new status effect 07 "Regen" (RAM index).
+db $30, $d2 ; Little endian pointer to free space liberated in the Healing mode routine.
+
+org $01d230 ; Location of free space from old Healing effect routine.
+jsl $c27df0 ; Execute Regen effect.
+jsr $ebf8	; Load damage registers.
+jsr $ec7f	; Apply damage registers to HP/MP.
+rts
+
+org $c27df0 ; Free space.
 Main:
-TDC
-LDA $b180	; Regen is status effect 07 (RAM order) so load $B179+7
-BNE $03		; If nonzero, branch to keep value loaded
-LDA $aec7	; Else load unknown value
-DEC		    ; Subtract 1
-TAX		    ; Use as index to
-LDA $b163,X	; Load battle ID of affected unit
-TAY		    ; Transfer battle ID to Y
-REP #$20    ; Full disclosure I don't really understand the last 7 lines, I just copied them from similar routines. They find the unit's battle ID.
-XBA
-LSR		    ; Convert battle ID to stat block offset
-TAX		    ; Transfer stat block offset to X
-STA $10		; And store it to $10
-TDC
-SEP #$20
-LDA #$01	; Load 1
-STA $b003,Y	; Set Regen active
-LDA $b121,Y	; Load Regen timer reference
-STA $af74,Y	; Store Regen ATB timer
-REP #$20
-LDA $b186	; Load status effect controller
-AND #$1fdf	; Clear Regen bit $20
-STA $b186	; Store it
-TDC
-SEP #$20
-LDA $5e4c,X	; Load status byte 1
-BIT #$40	; Test Regen
-BEQ .exit	; If not set, exit
-LDX #$0001	; Load 1
-STX $ad89	; Store damage
-TYA		    ; Transfer battle ID
-STA $b1fd	; Store unit's battle ID
-LDA #$80	; Load $80 for healing
-STA $b202	; Store healing bitflag
+tdc
+lda $b180	; Regen is status effect 07 (RAM order) so load $B179+7.
+bne $03		; If nonzero, branch to keep value loaded.
+lda $aec7	; Else load unknown value.
+dec		    ; Subtract 1.
+tax		    ; Use as index to
+lda $b163,X	; Load battle ID of affected unit.
+tay		    ; Transfer battle ID to Y.
+rep #$20    ; Full disclosure I don't really understand the last 5 lines, I just copied them from similar status routines. They find the unit's battle ID.
+xba
+lsr		    ; Convert battle ID to stat block offset.
+tax		    ; Transfer stat block offset to X.
+sta $10		; And store offset to $10 for some reason, just copied this from the original routine.
+tdc
+sep #$20
+lda #$01	; Load one.
+sta $b003,Y	; Set Regen active.
+lda $b121,Y	; Load Regen timer reference.
+sta $af74,Y	; Store Regen ATB timer.
+rep #$20
+lda $b186	; Load status effect controller.
+and #$1fdf	; Clear Regen bit $20.
+sta $b186	; Store it.
+tdc
+sep #$20
+lda $5e4c,X	; Load status byte 1.
+bit #$40	; Test Regen.
+beq .exit	; If not set, exit.
+ldx #$0001	; Load one.
+stx $ad89	; Store damage.
+tya		    ; Transfer battle ID.
+sta $b1fd	; Store unit's battle ID.
+lda #$80	; Load $80 for healing.
+sta $b202	; Store healing bitflag.
 .exit
-RTL         ; #73 bytes in length
+rtl
 
-org $3db50e ; Location where timer reference gets stored
-JSR $6700   ; Calculate and store timer reference
-NOP #5      ; Opcodes to store ATB moved to child routine
+org $3db50e ; Location where timer gets initialized.
+jsr $6693   ; Calculate and store timer reference.
+nop #5      ; Opcodes to store ATB moved to subroutine.
 
-org $fd6700 ; Free space
-PHP         ; Push flags
-PHY         ; Push Y
-REP #$30    ; Set A,X,Y 16-bit
-TXA         ; X holds loop counter used as battle ID
-XBA
-LSR
-TAY         ; Calculate stat block offset based on battle ID
-TDC
-SEP #$20    ; Set A 8-bit
-LDA #6      ; Quickie just load 6 but this will be replaced with a dynamic tick rate
-STA $af72,X ; Store ATB
-STA $b121,X ; Store ATB timer reference
-PLY         ; Pull Y
-PLP         ; Pull flags
-RTS
+org $fd6693 ; Free space.
+php         ; Push flags.
+rep #$30    ; Set A,X,Y 16-bit.
+tdc
+sep #$20    ; Set A 8-bit.
+lda $2990   ; Load battle speed.
+and #$07    ; Keep the low three bits.
+clc
+adc #$02    ; Add 2 + battle speed.
+sta $af72,X ; Store timer.
+sta $b121,X ; Store timer reference.
+plp         ; Pull flags.
+rts
