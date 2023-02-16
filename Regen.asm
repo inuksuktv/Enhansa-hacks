@@ -118,10 +118,15 @@ rts             ; 39 bytes liberated by moving some of the routine to FlowContro
 ; handing section. Fourth we write the actual Regen effect in some free space in bank $C2. Fifth we edit the routine that sets status timer references
 ; at the start of battle to adjust the tick interval for Regen. This solution includes some logic to account for the player's Battle Speed setting.
 
+org $01e062 ; Location in the fragment that applies HP Down
+jsr $d2b5   ; Clear Regen status
 
 org $01e078 ; Location in Apply Status routine.
 beq $24     ; branch to test status mode 03 instead of jump to return.
 nop         ; we wrote over a JMP so NOP the 3rd byte.
+
+org $01e091 ; Location in the fragment that sets Regen.
+jsr $d2c7   ; Clear HP Down status
 
 org $01b93b ; Location of pointer for new status effect 07 "Regen" (RAM index).
 db $30, $d2 ; Little endian pointer to free space liberated in the Healing mode routine.
@@ -132,7 +137,25 @@ jsr $ebf8	; Load damage registers.
 jsr $ec7f	; Apply damage registers to HP/MP.
 rts
 
-org $c27df0 ; Free space.
+org $c1d2b5 ; Location of free space from old Status Impact routine.
+lda $5e4c,Y ; Load Constant status 1.
+and #$bf    ; Clear Regen bit $40.
+sta $5e4c,Y ; Store Constant status 1.
+lda #$00    ; Load zero.
+sta $b003,X ; Clear Regen bitflag.
+lda $b12c,X ; Load HP Down timer reference to store it when we return from this routine.
+rts
+
+org $c1d2c7 ; Contiguous free space from the old Status Impact routine
+lda $5e4b,Y ; Load status
+and #$ef    ; Clear HP Down
+sta $5e4b,Y ; Store status
+lda #$00    ; Load zero
+sta $b00e,X ; Clear HP Down bitflag
+lda $b121,X ; Load Regen timer reference to store it when we return from this routine.
+rts
+
+org $c27df0 ; Vanilla free space.
 Main:
 tdc
 lda $b180	; Regen is status effect 07 (RAM order) so load $B179+7.
