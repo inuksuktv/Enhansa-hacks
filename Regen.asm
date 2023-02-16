@@ -117,22 +117,23 @@ rts             ; 39 bytes liberated by moving some of the routine to FlowContro
 ; routine. That pointer is used when the status's ATB hits zero. Third we write a compact routine using some of the free space liberated in the Tech
 ; handing section. Fourth we write the actual Regen effect in some free space in bank $C2. Fifth we edit the routine that sets status timer references
 ; at the start of battle to adjust the tick interval for Regen. This solution includes some logic to account for the player's Battle Speed setting.
+; ***Update this comment for the HPDown/Regen rework.***
 
-org $01e062 ; Location in the fragment that applies HP Down
-jsr $d2b5   ; Clear Regen status
+org $01e062 ; Location in the fragment that applies HP Down.
+jsr $d2b5   ; Clear Regen status. Overwritten lda opcode moved to child routine.
 
 org $01e078 ; Location in Apply Status routine.
 beq $24     ; branch to test status mode 03 instead of jump to return.
 nop         ; we wrote over a JMP so NOP the 3rd byte.
 
 org $01e091 ; Location in the fragment that sets Regen.
-jsr $d2c7   ; Clear HP Down status
+jsr $d2c7   ; Clear HP Down status. Overwritten lda opcode moved to child routine.
 
 org $01b93b ; Location of pointer for new status effect 07 "Regen" (RAM index).
 db $30, $d2 ; Little endian pointer to free space liberated in the Healing mode routine.
 
 org $01d230 ; Location of free space from old Healing effect routine.
-jsl $c27df0 ; Execute Regen effect.
+jsl $cffe85 ; Execute Regen effect.
 jsr $ebf8	; Load damage registers.
 jsr $ec7f	; Apply damage registers to HP/MP.
 rts
@@ -155,7 +156,7 @@ sta $b00e,X ; Clear HP Down bitflag
 lda $b121,X ; Load Regen timer reference to store it when we return from this routine.
 rts
 
-org $c27df0 ; Vanilla free space.
+org $cffe85 ; Vanilla free space.
 Main:
 tdc
 lda $b180	; Regen is status effect 07 (RAM order) so load $B179+7.

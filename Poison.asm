@@ -8,7 +8,7 @@ sta $28         ; Store dividend.
 lda $5e33,X
 sta $29
 jsr $c92a       ; Divide max HP / 10.
-jsl $c37a30     ; Calculate Poison tick damage and set timer. ***new JSL when Poison ATB hits zero***
+jsl $cffed8     ; Calculate Poison tick damage and set timer.
 nop #21
 
 org $01e03a     ; Apply Status routine fragment.
@@ -17,7 +17,7 @@ lsr             ; /2
 sta $af32,X     ; Store Poison timer.
 nop #3
 
-org $c37a30     ; Free space to calculate damage and set timer.
+org $cffed8     ; Free space to calculate damage and set timer.
 Poison:
 php
 rep #$30        ; Set A,X,Y to 16-bit.
@@ -65,10 +65,10 @@ plp
 rtl
 
 org $3db4f6     ; Sets Poison timer at the start of battle.
-jsr $66b0       ; Jump to calculate timer reference based on Battle Speed.
+jsr $66b8       ; Jump to calculate timer reference based on Battle Speed.
 nop #5
 
-org $fd66b0     ; Free Space.
+org $fd66b8     ; Free Space.
 php             ; Push flags.
 phy             ; Push Y.
 phx             ; Push X.

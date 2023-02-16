@@ -1,12 +1,12 @@
 hirom
 
 org $01bd82 ; Location that adjusts ATB timer for Haste.
-jsl $c27e48 ; Jump to free space. This JSL writes over 4 bytes that load ATB then lsr. The value in A gets stored immediately after this.
+jsl $cfff30 ; Jump to free space. This JSL writes over 4 bytes that load ATB then lsr. The value in A gets stored immediately after this.
 
 org $c1bd90 ; Location that adjusts ATB timer for Slow.
-jsl $c27e70 ; Jump to free space. This JSL writes over 4 bytes that load ATB the asl. The value in A gets stored immediately after this.
+jsl $cfff58 ; Jump to free space. This JSL writes over 4 bytes that load ATB the asl. The value in A gets stored immediately after this.
 
-org $c27e48 ; Free space to calculate new Haste ATB bonus.
+org $cfff30 ; Free space to calculate new Haste ATB bonus.
 lda $afab,X ; Load ATB.
 sta $2a     ; Store ATB.
 php
@@ -24,7 +24,7 @@ lsr #4      ; /16
 plp
 rtl         ; We store 11*ATB/16 (ATB*0.688) approximately 2*ATB/3 when we get back.
 
-org $c27e70 ; Free space to calculate new Slow ATB malus.
+org $cfff58 ; Free space to calculate new Slow ATB malus.
 lda $afab,X ; Load ATB.
 sta $2a     ; Store ATB.
 php
