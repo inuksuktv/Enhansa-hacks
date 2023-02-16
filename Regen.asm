@@ -3,10 +3,10 @@ hirom
 ; Tech Handling Section
 
 ; This hack allows Tech mode 00 (Healing) to also apply status effects. The mode 00 and 02 (Status) routines are re-written from scratch to be able to
-; work together. Modes 00 and 02 both pass control to a new routine that will resolve any conflicts in the meaning of the effect header bytes between
-; modes, since they are context-dependant. Mode 02 works the same as the base game. Mode 00 can read in four additional bytes to also apply a status.
+; work together. Modes 00 and 02 both pass control to a new routine that will resolve any context conflicts of the effect header bytes between
+; modes. Mode 02 works the same as the base game. Mode 00 can read in four additional bytes to also apply a status.
 
-; Tech Mode 00 byte meaning: Tech mode, Healing Power, HP/MP healing, status mode, status bitflags, base success, bonus success, bit $20 always hit.
+; Tech Mode 00 bytes 00-07 meaning: Tech mode, Healing Power, HP/MP healing, status mode, status bitflags, base success, bonus success, bit $20 always hit.
 
 org $cc21ab     ; Edit Marle's Aura effect header for demo purposes. Delete these two lines if you don't want Aura to set Regen.
 db $00, $05, $80, $02, $40, $00, $00, $20
@@ -66,7 +66,7 @@ jsr $d132       ; Load attacker's Magic and byte 2,3 of effect header.
 jsr $da37       ; Apply healing.
 lda #$00
 sta $b200
-rts             ; Some bytes liberated here, but we make use of them for the Regen effect.
+rts             ; Some free bytes remain here, but we make use of them for the Regen effect.
 
 org $01d267     ; Tech mode 02 Status Impact.
 jmp $8a06       ; Pass control to flow control routine.
@@ -108,23 +108,23 @@ lda $16         ; $16 is zero here if everything went as planned, this is just c
 cmp #$80        ; Not sure why $16 would ever be #$80.
 beq .Miss
 .Return
-rts             ; 39 bytes liberated by moving some of the routine to FlowController.
+rts             ; Free bytes remain, some of which are used for Regen/HP Down interactions.
 
 ; Regen Section
 
 ; This hack to implement HP Regen has several different sections. It makes use of some unused status ATB tracking. Regen is constant status 1 bit $40.
-; First we correct a bug in the Apply Status routine where status mode 02 returns early. Second we point status effect 07 (RAM index) at our new
-; routine. That pointer is used when the status's ATB hits zero. Third we write a compact routine using some of the free space liberated in the Tech
-; handing section. Fourth we write the actual Regen effect in some free space in bank $C2. Fifth we edit the routine that sets status timer references
-; at the start of battle to adjust the tick interval for Regen. This solution includes some logic to account for the player's Battle Speed setting.
-; ***Update this comment for the HPDown/Regen rework.***
-
-org $01e062 ; Location in the fragment that applies HP Down.
-jsr $d2b5   ; Clear Regen status. Overwritten lda opcode moved to child routine.
+; First we correct a bug in the Apply Status routine where status mode 02 returns early. We also add some hooks for Regen to remove HP Down and vice versa.
+; Second we point status effect 07 (RAM index) at our new routine. That pointer is used when the status's ATB hits zero. Third we write a compact routine
+; using some of the free space liberated in the Tech handing section. Fourth we write the actual Regen effect in some free space in bank $C2. Fifth we
+; edit the routine that sets status timer references at the start of battle to adjust the tick interval for Regen. This solution includes some logic
+; to account for the player's Battle Speed setting.
 
 org $01e078 ; Location in Apply Status routine.
 beq $24     ; branch to test status mode 03 instead of jump to return.
 nop         ; we wrote over a JMP so NOP the 3rd byte.
+
+org $01e062 ; Location in the fragment that applies HP Down.
+jsr $d2b5   ; Clear Regen status. Overwritten lda opcode moved to child routine.
 
 org $01e091 ; Location in the fragment that sets Regen.
 jsr $d2c7   ; Clear HP Down status. Overwritten lda opcode moved to child routine.
