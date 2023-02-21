@@ -70,22 +70,20 @@ cmp $16     ; Compare Evade to Hit.
 bcc .Hit    ; Branch to record a hit if Evade < Hit.
 sec
 sbc $16     ; Else subtract Evade - Hit.
-sta $16     ; Store Hit%.
+sta $16     ; Store Miss%.
 tdc
 tax
 lda #$64
 jsr $af22   ; Generate random value.
-sta $18     ; Store random value to $18
-lda $16     ; Load Hit%.
-cmp $18     ; Compare Hit% to random value.
-bcc .Miss   ; Branch to Miss if Hit% < random value.
+cmp $16     ; Compare random value to Miss%.
+bcc .Miss   ; Branch if random value < Miss%.
 .Hit
 lda #$01    ; Load one.
 sta $16     ; Store one to record a hit.
 bra .Return ; Skip Miss.
 .Miss
 tdc
-sta $16     ; Set $16 to zero.
+sta $16     ; Set $16 to zero to record a miss.
 .Return
 tdc
 sta $ae4f   ; Set unknown location to zero.
