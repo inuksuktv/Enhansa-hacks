@@ -1,12 +1,15 @@
 hirom
 
-org $c1de9e ; Start of "Check attacker status" for hit/miss routines.
-nop #81     ; Write over the routine.
+org $01de9e ; Start of "Check attacker status" for hit/miss routines.
+nop #82     ; Write over the routine.
 
-org $c1def0 ; Start of "Check defender status" for hit/miss routines.
-nop #277    ; Write over the routine.
+org $01def0 ; Start of "Check defender status" for hit/miss routines.
+nop #278    ; Write over the routine.
 
-org $c1de9e ; Write a fresh "Check attacker status" routine that only checks Blind.
+org $01dc64 ; Start of "Determine hit/miss" routine.
+nop #73     ; Write over the routine.
+
+org $01de9e ; Write a fresh "Check attacker status" routine that only checks Blind.
 CheckAttacker:
 ldx $b1f4   ; Load attacker's stat block offset.
 lda $5e4b,X ; Load attacker's status.
@@ -18,7 +21,7 @@ sta $16     ; Store Hit.
 .Return
 rts
 
-org $c1def0 ; Write a fresh "Check defender status" routine that omits the Slow check and the Level comparison.
+org $01def0 ; Write a fresh "Check defender status" routine that omits the Slow check and the Level comparison.
 CheckDefender:
 ldx $b1f6   ; Load defender's stat block offset.
 lda $5e4d,X ; Load constant status 2.
@@ -48,7 +51,7 @@ bit #$82    ; Test Stop or Sleep.
 beq .Blind  ; If not set, branch to test Blind.
 tdc
 lda #$01    ; Else load one.
-sta #$18    ; Store Evade.
+sta $18     ; Store Evade.
 .Blind
 lda $0e     ; Load status.
 bit #$01    ; Test Blind.
@@ -58,4 +61,32 @@ lsr         ; Evade / 2.
 inc         ; Add one.
 sta $18     ; Store Evade/2 + 1.
 .Return
+rts
+
+org $01dc64
+DetermineHit:
+lda $18     ; Load Evade.
+cmp $16     ; Compare Evade to Hit.
+bcc .Hit    ; Branch to record a hit if Evade < Hit.
+sec
+sbc $16     ; Else subtract Evade - Hit.
+sta $16     ; Store Hit%.
+tdc
+tax
+lda #$64
+jsr $af22   ; Generate random value.
+sta $18     ; Store random value to $18
+lda $16     ; Load Hit%.
+cmp $18     ; Compare Hit% to random value.
+bcc .Miss   ; Branch to Miss if Hit% < random value.
+.Hit
+lda #$01    ; Load one.
+sta $16     ; Store one to record a hit.
+bra .Return ; Skip Miss.
+.Miss
+tdc
+sta $16     ; Set $16 to zero.
+.Return
+tdc
+sta $ae4f   ; Set unknown location to zero.
 rts
