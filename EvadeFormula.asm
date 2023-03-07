@@ -79,7 +79,7 @@ cmp $16     ; Compare random value to Miss%.
 bcc .Miss   ; Branch if random value < Miss%.
 .Hit
 lda #$01    ; Load one.
-sta $16     ; Store one to record a hit.
+sta $16     ; Set $16 to one to record a hit.
 bra .Return ; Skip Miss.
 .Miss
 tdc
