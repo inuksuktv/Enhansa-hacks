@@ -29,7 +29,7 @@ Bitflags:
 lda $5e4a,X
 bit #$80        ; Test actor is dead.
 beq .SleepTest  ; Continue if not set.
-jmp .Lock       ; Else jump to Lock. (Why? You're dead.)
+jmp .Return     ; Else jump to return.
 .SleepTest
 lda $5e4b,X     ; Load status.
 bit #$02        ; Test Sleep.
@@ -59,6 +59,7 @@ bit #$40        ; Test Poison.
 beq .HPDown
 lda $afc1,Y
 ora #$01        ; Set Poison bitflag $01.
+sta $afc1,Y
 .HPDown
 lda $b00e,Y
 and #$fe        ; Clear HP Down bitflag $01.
@@ -147,34 +148,48 @@ sta $afb6,Y
 lda #$04
 sta $5e0a,Y     ; Set wander byte to $04.
 .Lock
+cpy #$0003      ; Compare battle ID to 3
+bcc .LockPC     ; Branch if actor is a PC
 lda $5e4b,X     ; Load status.
 bit #$08        ; Test Lock.
 beq .Confuse
-cpy #$0003      ; Compare battle ID to 3
-bcc .LockPC     ; Branch if actor is a PC
+cmp $ae7a,Y     ; Compare status to secondary status byte.
+beq .Confuse    ; Branch if equal.
+sta $ae7a,Y     ; Else store status to secondary status byte.
 lda #$ff
 sta $b268,Y     ; Store FF to skip enemy's next action.
-bra .Confuse    ; Skip LockPC section
+bra .Confuse
 .LockPC
+tdc
+sta $a0d1,Y     ; Clear Lock bitflag $01 for PCs.
+lda $5e4b,X     ; Load status.
+bit #$08        ; Test Lock.
+beq .Confuse    ; Branch if not set.
 lda #$01
-sta $a0d1,Y     ; Set Lock bitflag $01.
+sta $a0d1,Y     ; Else set Lock bitflag $01 for PCs.
 .Confuse
 lda $5e4b,X     ; Load status.
-and #$04        ; Test Confuse.
-beq .2ndConfuse ; Branch to another Confuse test if not set.
-cmp $ae7a,Y     ; Compare to Confuse byte.
-beq .Return     ; Return if not set.
-sta $ae7a,Y     ; Store status to Confuse byte.
+bit #$04        ; Test Confuse.
+beq .2ndTest    ; If not set, branch to secondary status test.
+cmp $ae7a,Y     ; Compare to secondary status byte.
+beq .Return     ; Return if equal.
+sta $ae7a,Y     ; Else store status to secondary byte.
 lda #$ff
 sta $b268,Y     ; Store FF to skip enemy's next action.
 bra .Return
-.2ndConfuse
-eor $ae7a,Y     ; EOR status with Confuse byte.
-and #$04        ; Test Confuse.
-beq .Return
-lda #$ff
-sta $b268,Y     ; Store FF to skip next action.
+.2ndTest
+eor $ae7a,Y     ; EOR status with secondary status byte.
+bit #$08        ; Test Lock.
+bne .Clear      ; Branch if status was just cleared.
+bit #$04        ; Test Confuse.
+bne .Clear      ; Branch if status was just cleared.
+bra .Return
+.Clear
 tdc
-sta $ae7a,Y     ; Clear Confuse byte.
+sta $ae7a,Y     ; Clear secondary status byte.
+lda #$ff
+sta $b268,Y     ; Store FF to skip enemy's next action.
 .Return
 rts
+
+
