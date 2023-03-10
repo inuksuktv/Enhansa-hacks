@@ -154,11 +154,8 @@ lda $5e4b,X     ; Load status.
 bit #$08        ; Test Lock.
 beq .Confuse
 cmp $ae7a,Y     ; Compare status to secondary status byte.
-beq .Confuse    ; Branch if equal.
-sta $ae7a,Y     ; Else store status to secondary status byte.
-lda #$ff
-sta $b268,Y     ; Store FF to skip enemy's next action.
-bra .Confuse
+beq .Confuse    ; If equal, branch to test Confuse.
+bra .Store      ; Else branch to store secondary status byte.
 .LockPC
 tdc
 sta $a0d1,Y     ; Clear Lock bitflag $01 for PCs.
@@ -173,10 +170,7 @@ bit #$04        ; Test Confuse.
 beq .2ndTest    ; If not set, branch to secondary status test.
 cmp $ae7a,Y     ; Compare to secondary status byte.
 beq .Return     ; Return if equal.
-sta $ae7a,Y     ; Else store status to secondary byte.
-lda #$ff
-sta $b268,Y     ; Store FF to skip enemy's next action.
-bra .Return
+bra .Store      ; Else branch to store secondary status byte.
 .2ndTest
 eor $ae7a,Y     ; EOR status with secondary status byte.
 bit #$08        ; Test Lock.
@@ -186,9 +180,12 @@ bne .Clear      ; Branch if status was just cleared.
 bra .Return
 .Clear
 tdc
+.Store
 sta $ae7a,Y     ; Clear secondary status byte.
+cpy #$0003      ; Compare battle ID to three.
+bcc .Return     ; If PC, branch to return.
 lda #$ff
-sta $b268,Y     ; Store FF to skip enemy's next action.
+sta $b268,Y     ; Else store FF to skip enemy's next action.
 .Return
 rts
 
