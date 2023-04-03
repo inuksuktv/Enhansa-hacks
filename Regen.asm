@@ -8,7 +8,7 @@ hirom
 
 ; Tech Mode 00 bytes 00-07 meaning: Tech mode, Healing Power, HP/MP healing, status mode, status bitflags, base success, bonus success, bit $20 always hit.
 
-org $cc21ab     ; Edit Marle's Aura effect header for demo purposes. Delete these two lines if you don't want Aura to set Regen.
+org $cc21ab     ; Edit Marle's Aura effect header for demo purposes. Delete this line and the following one if you don't want Aura to set Regen.
 db $00, $05, $80, $02, $40, $00, $00, $20
 
 org $018a05     ; Write over the 2.5x Evade refresh subroutine for free space.
@@ -21,18 +21,18 @@ nop #29         ; We use this space to jump to FlowController, for the new heali
 org $01d267     ; Write over the Tech mode 02 Status Impact routine.
 nop #119        ; We use this space to jump to FlowController and for the new status impact routine.
 
-org $c18a06     ; Flow control for Healing and Status Impact Tech modes.
+org $c18a06     ; Flow control for Tech modes 00 Healing, 02 Status Impact, and 07 Transfer HP/MP.
 FlowController:
 jsr $e9a3       ; Get attacker's stat block offset.
 .StartOfLoop
 jsr $e9b8       ; Get affected unit's stat block offset.
 lda $aee6       ; Load Tech mode.
-cmp #$00        ; If Tech mode == 00 Healing.
-bne .StatusMode ; Then continue, else branch to test 02 Status Impact.
-jsr $d224       ; Run healing routine.
-lda $aeea       ; Load status bitflag.
-cmp #$00        ; Continue if nonzero.
-beq .CheckIndex ; Else branch to loop.
+cmp #$02        ; If Tech mode == 02 Status Impact,
+beq .StatusMode ; Then branch to status mode.
+jsr $d224       ; Else run healing routine.
+lda $aee6       ; Load Tech mode.
+cmp #$07        ; If Tech mode == 07 Transfer HP/MP,
+beq .CheckIndex ; Then branch to loop.
 jsr $d1a4       ; Get Base/Bonus success chance.
 lda $16
 sta $1a         ; Store Base success chance to $1a.
@@ -77,7 +77,7 @@ bne .Effect     ; If set, branch to apply status.
 tdc
 ldx $b1f4
 lda $5e66,X     ; Load attacker's Magic.
-tax             ; Edit out the transfers to x here, superfluous.
+tax
 stx $0028       ; Store Magic.
 lda $1c         ; Load bonus success byte.
 tax
@@ -90,7 +90,7 @@ sta $1a         ; Store success chance.
 tdc
 tax
 lda #$64
-jsr $af22       ; Generate random value.
+jsr $af22       ; Generate random value 0-99.
 cmp $1a         ; Compare random value to success chance.
 beq .Effect
 bcc .Effect     ; If value == or < success%, branch to apply status.
