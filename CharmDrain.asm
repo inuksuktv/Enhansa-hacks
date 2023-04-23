@@ -1,5 +1,8 @@
 hirom
 
+; This routine drains 50% of the caster's max HP including a check for Charm Top to drain 100%.
+; Edit the damage formula on the desired Tech using Temporal Flux/Hi-Tech to use formula 04.
+
 org $01d3bf ; The old Stealing routine. Tech mode 06 for old Charm.
 nop #53     ; NOP it out.
 
