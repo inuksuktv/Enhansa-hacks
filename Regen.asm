@@ -8,8 +8,8 @@ hirom
 
 ; Tech Mode 00 bytes 00-07 meaning: Tech mode, Healing Power, HP/MP healing, status mode, status bitflags, base success, bonus success, bit $20 always hit.
 
-org $cc21ab     ; Edit Marle's Aura effect header for demo purposes. Delete this line and the following one if you don't want Aura to set Regen.
-db $00, $05, $80, $02, $40, $00, $00, $20
+;org $cc21ab     ; Uncomment this line and the following one if you'd like Aura to set Regen.
+;db $00, $05, $80, $02, $40, $00, $00, $20
 
 org $018a05     ; Write over the 2.5x Evade refresh subroutine for free space.
 rts             ; Failsafe for the 2.5x Evade ATB routine that still points here. 2.5x Evade is only used on Third Eye and this ATB tracking is unused.
@@ -33,11 +33,9 @@ jsr $d224       ; Else run healing routine.
 lda $aee6       ; Load Tech mode.
 cmp #$07        ; If Tech mode == 07 Transfer HP/MP,
 beq .CheckIndex ; Then branch to loop.
-jsr $d1a4       ; Get Base/Bonus success chance.
-lda $16
-sta $1a         ; Store Base success chance to $1a.
-lda $18
-sta $1c         ; Store Bonus success byte to $1c.
+tdc
+ora #$20
+sta $aeed       ; Set to always hit.
 lda $aee9       ; Load status mode.
 sta $16         ; Store to $16.
 lda $aeea       ; Load status bitflag.

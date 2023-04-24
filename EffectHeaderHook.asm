@@ -1,8 +1,8 @@
 exhirom
 
-org $01d6fa ; Location of setup for Attack Effect routine.
-jsl $5f0110 ; Jump to free space in an expanded ROM bank.
-nop #6      ; The setup is ten bytes total. Setup moved to the cleanup section of the child routine. The routine call is at $c1d704 JSR.W ($d9d7,X).
+org $c1d6fa     ; Location of setup for Attack Effect routine.
+jsl $5f0110     ; Jump to free space in an expanded ROM bank.
+nop #6          ; The setup is ten bytes total. Setup moved to the cleanup section of the child routine. The routine call is at $c1d704 JSR.W ($d9d7,X).
 
 org $5f0110
 EffectHeaderHook:
