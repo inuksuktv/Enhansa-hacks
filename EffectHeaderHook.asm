@@ -14,7 +14,7 @@ lda $aeff,X     ; Load PC ID.
 sta $00         ; Store it.
 cmp #$01        ; Compare to one.
 bne .Cleanup    ; Branch if not Marle.
-lda $b18c       ; Load control header.
+lda $b2c8       ; Load effect header.
 cmp #$09        ; Compare to 09.
 bne .Cleanup    ; Branch if Tech is not Aura.
 lda $00         ; Load PC ID.
