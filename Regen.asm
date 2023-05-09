@@ -1,4 +1,4 @@
-hirom
+exhirom
 
 ; Tech Handling Section
 
@@ -11,9 +11,9 @@ hirom
 ;org $cc21ab     ; Uncomment this line and the following one if you'd like Aura to set Regen.
 ;db $00, $05, $80, $02, $40, $00, $00, $20
 
-org $018a05     ; Write over the 2.5x Evade refresh subroutine for free space.
-rts             ; Failsafe for the 2.5x Evade ATB routine that still points here. 2.5x Evade is only used on Third Eye and this ATB tracking is unused.
-nop #75         ; This space gets used for the new FlowController routine.
+org $01e3cd     ; First we harvest some free space. Damage formulas 07, 08, 09, and 0A are unused.
+jmp $e575       ; Jump past the unused section so that the damage formula routine doesn't break.
+nop #421        ; Write over the unused section.
 
 org $01d221     ; Write over the Tech mode 00 Healing routine.
 nop #29         ; We use this space to jump to FlowController, for the new healing routine, and for the Regen effect.
@@ -21,7 +21,7 @@ nop #29         ; We use this space to jump to FlowController, for the new heali
 org $01d267     ; Write over the Tech mode 02 Status Impact routine.
 nop #119        ; We use this space to jump to FlowController and for the new status impact routine.
 
-org $c18a06     ; Flow control for Tech modes 00 Healing, 02 Status Impact, and 07 Transfer HP/MP.
+org $c1e3d0     ; Flow control for Tech modes 00 Healing, 02 Status Impact, and 07 Transfer HP/MP.
 FlowController:
 jsr $e9a3       ; Get attacker's stat block offset.
 .StartOfLoop
@@ -58,7 +58,7 @@ bne .StartOfLoop; Loop if nonzero.
 rts
 
 org $01d221     ; Tech mode 00 Healing.
-jmp $8a06       ; Pass control to flow control routine.
+jmp $e3d0       ; Pass control to flow control routine.
 Healing:        ; Start status routine.
 jsr $d132       ; Load attacker's Magic and byte 2,3 of effect header.
 jsr $da37       ; Apply healing.
@@ -67,7 +67,7 @@ sta $b200
 rts             ; Some free bytes remain here, but we make use of them for the Regen effect.
 
 org $01d267     ; Tech mode 02 Status Impact.
-jmp $8a06       ; Pass control to flow control routine.
+jmp $e3d0       ; Pass control to flow control routine.
 StatusImpact:   ; Start Status routine.
 lda $ae4d       ; Load special bitflags.
 bit #$20        ; Test always hits.
@@ -131,7 +131,7 @@ org $01b93b ; Location of pointer for new status effect 07 "Regen" (RAM index).
 db $30, $d2 ; Little endian pointer to free space liberated in the Healing mode routine.
 
 org $01d230 ; Location of free space from old Healing effect routine.
-jsl $cffe85 ; Execute Regen effect.
+jsl $5f0300 ; Execute Regen effect.
 jsr $ebf8	; Load damage registers.
 jsr $ec7f	; Apply damage registers to HP/MP.
 rts
@@ -154,7 +154,7 @@ sta $b00e,X ; Clear HP Down bitflag
 lda $b121,X ; Load Regen timer reference to store it when we return from this routine.
 rts
 
-org $cffe85 ; Vanilla free space.
+org $5f0300 ; Vanilla free space.
 Main:
 tdc
 lda $b180	; Regen is status effect 07 (RAM order) so load $B179+7.
@@ -194,10 +194,10 @@ sta $b202	; Store healing bitflag.
 rtl
 
 org $3db50e ; Location where timer gets initialized.
-jsr $6693   ; Calculate and store timer reference.
-nop #5      ; Opcodes to store ATB moved to subroutine.
+jsl $5f0360 ; Calculate and store timer reference.
+nop #4      ; Opcodes to store ATB moved to subroutine.
 
-org $fd6693 ; Free space.
+org $5f0360 ; Free space.
 php         ; Push flags.
 rep #$30    ; Set A,X,Y 16-bit.
 tdc
@@ -209,4 +209,4 @@ adc #$02    ; Add 2 + battle speed.
 sta $af72,X ; Store timer.
 sta $b121,X ; Store timer reference.
 plp         ; Pull flags.
-rts
+rtl

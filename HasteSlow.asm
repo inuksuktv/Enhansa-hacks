@@ -4,7 +4,7 @@ org $01bd82 ; Location that adjusts ATB timer for Haste.
 jsl $cfff30 ; Jump to free space. This JSL writes over 4 bytes that load ATB then lsr. The value in A gets stored immediately after this.
 
 org $c1bd90 ; Location that adjusts ATB timer for Slow.
-jsl $cfff58 ; Jump to free space. This JSL writes over 4 bytes that load ATB the asl. The value in A gets stored immediately after this.
+jsl $cfff58 ; Jump to free space. This JSL writes over 4 bytes that load ATB then asl. The value in A gets stored immediately after this.
 
 org $cfff30 ; Free space to calculate new Haste ATB bonus.
 lda $afab,X ; Load ATB.

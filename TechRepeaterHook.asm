@@ -8,12 +8,12 @@ jsr $bb49       ; Else call another Tech.
 nop
 
 org $5f0080     ; Free space in expanded rom
-TechRepeater:   ; A holds control header. X holds PC ID.
+TechRepeater:   ; As we arrive, A holds control header. X holds PC ID.
 lda $b1be,X     ; Load attacker's battle ID.
 xba
 lsr
 tax             ; Convert battle ID to stat block offset.
-lda $aecc       ; This and the next four lines written over by the hook at $c1bc4a.
+lda $aecc       ; The hook at $c1bc4a wrote over this and the next four lines.
 cmp #$03        ; Compare to three.
 bcc $05         ; Branch if target is PC.
 lda #$01

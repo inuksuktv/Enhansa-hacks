@@ -27,7 +27,6 @@ lsr #2          ; /4
 clc
 adc $aeef       ; Add TP + TP/4.
 sta $aeef       ; Store 1.25*TP
-bra .Marle
 .Marle
 lda $00         ; Load attacker's battle ID.
 tax
@@ -45,7 +44,6 @@ lda #$02        ; (isMarle, isAura, isUpgraded all passed)
 sta $aee9       ; Set status mode to 02.
 lda #$40
 sta $aeea       ; Set status bitflag to $40 (Regen).
-bra .Lucca
 .Lucca
 lda $00         ; Load attacker's battle ID.
 tax
@@ -72,7 +70,7 @@ bne .Frog       ; Branch if not Robo.
 .LaserSpin
 lda $b2c8       ; Load effect header.
 cmp $1b
-bne .Frog       ; Branch if Tech is not Laser Spin.
+bne .CureBeam   ; Branch if Tech is not Laser Spin.
 lda $270c       ; Load Robo's upgrade memory byte.
 bit #$01
 beq .Frog
@@ -81,9 +79,106 @@ lsr #2          ; /4
 clc
 adc $aeef       ; Add TP + TP/4.
 sta $aeef       ; Store 1.25*TP
+bra .Frog
+.CureBeam
+lda $b2c8       ; Load effect header.
+cmp $1a
+bne .Frog       ; Branch if Tech is not Cure Beam.
+lda $270c       ; Load Robo's upgrade memory byte.
+bit #$10        ; Test bit $10
+beq .Frog
+lda #$01        ; (isRobo, isCureBeam, isUpgraded all passed.)
+sta $aee6       ; Set Tech Mode 01 Status Recovery
+lda $aee7       ; Load healing power.
+ora #$40        ; Set bit $40
+sta $aee7       ; Store it.
+bra .Frog
 .Frog
+lda $00         ; Load attacker's battle ID.
+tax
+lda $aeff,X     ; Load PC ID.
+cmp #$04        ; Compare to four.
+bne .Ayla       ; Branch if not Frog
+.SlurpCut
+lda $b2c8       ; Load Tech header
+cmp $22
+beq .SlurpCutUp ; Continue if Tech is Slurp Cut.
+cmp $40
+beq .SlurpCutUp ; Continue if Combo Tech uses Slurp Cut.
+bra .Water
+.SlurpCutUp
+lda $275c       ; Load Frog's upgrade memory byte.
+bit #$01
+beq .Ayla
+lda $aeef       ; Load Tech Power (isFrog, isSlurpCut, isUpgraded all passed).
+lsr #2
+clc
+adc $aeef
+sta $aeef
+bra .Ayla
+.Water
+lda $b2c8       ; Load Tech header.
+cmp $23
+beq .WaterUp    ; Continue if Tech is Water.
+cmp $26
+beq .WaterUp    ; Continue if Tech is Water 2.
+bra .Heal
+.WaterUp
+lda $275c       ; Load Frog's upgrade memory byte.
+bit #$10
+beq .Ayla
+lda $aeef       ; Load Tech Power (isFrog, isWater, isUpgraded all passed).
+lsr #2          ; /4
+clc
+adc $aeef       ; Add TP + TP/4.
+sta $aeef       ; Store 1.25*TP
+.Heal
+lda $b2c8
+cmp $24
+bne .Ayla       ; Branch if Tech is not Heal.
+lda $275c       ; Load Frog's upgrade memory byte.
+bit #$20
+beq .Ayla
+lda #$02        ; (isFrog, isHeal, isUpgraded all passed.)
+sta $aee9       ; Set status mode to 02.
+lda #$40
+sta $aeea       ; Set status bitflag to $40 (Regen).
+bra .Ayla
 .Ayla
+lda $00         ; Load attacker's battle ID.
+tax
+lda $aeff,X     ; Load PC ID.
+cmp #$05        ; Compare to five.
+bne .Magus      ; Branch if not Ayla.
+.Kiss
+lda $b2c8       ; Load effect header.
+cmp $29
+bne .Magus      ; Branch if Tech is not Kiss.
+lda $27ac       ; Load Ayla's upgrade memory byte.
+bit #$10
+beq .Magus
+lda #$02        ; (isAyla, isKiss, isUpgraded all passed.)
+sta $aee9       ; Set status mode to 04.
+lda #$40
+sta $aeea       ; Set status bitflag to $20 (MP Regen).
 .Magus
+lda $00         ; Load attacker's battle ID
+tax
+lda $aeff,X     ; Load PC ID.
+cmp #$06        ; Compare to six.
+bne .Cleanup    ; Branch if not Magus.
+.DarkBomb
+lda $b2c8       ; Load effect header.
+cmp $34
+bne .Cleanup    ; Branch if Tech is not Dark Bomb.
+lda $27fc       ; Load Magus's upgrade memory byte.
+bit #$10
+beq .Cleanup
+lda $aeef       ; Load Tech Power (isMagus, isDarkBomb, isUpgraded all passed).
+lsr #2          ; /4
+clc
+adc $aeef       ; Add TP + TP/4.
+sta $aeef       ; Store 1.25*TP
 .Cleanup
 plp             ; Pull flags.
 lda $aee6       ; Load Tech mode.
