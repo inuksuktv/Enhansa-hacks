@@ -38,9 +38,9 @@ lda $b2c8       ; Load effect header.
 cmp #$09        ; Compare to nine.
 bne .Lucca      ; Branch if Tech is not Aura.
 lda $266c       ; Load Marle's upgrade memory byte.
-bit #$01
-beq .Lucca      ; Branch if bit 01 not set.
-lda #$02        ; (isMarle, isAura, isUpgraded all passed)
+bit #$10
+beq .Lucca      ; Branch if bit 10 not set.
+lda #$02        ; Load two. (isMarle, isAura, isUpgraded all passed.)
 sta $aee9       ; Set status mode to 02.
 lda #$40
 sta $aeea       ; Set status bitflag to $40 (Regen).

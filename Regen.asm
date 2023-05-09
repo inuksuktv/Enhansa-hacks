@@ -11,14 +11,14 @@ exhirom
 ;org $cc21ab     ; Uncomment this line and the following one if you'd like Aura to set Regen.
 ;db $00, $05, $80, $02, $40, $00, $00, $20
 
-org $01e3cd     ; First we harvest some free space. Damage formulas 07, 08, 09, and 0A are unused.
+org $c1e3cd     ; First we harvest some free space. Damage formulas 07, 08, 09, and 0A are unused.
 jmp $e575       ; Jump past the unused section so that the damage formula routine doesn't break.
 nop #421        ; Write over the unused section.
 
-org $01d221     ; Write over the Tech mode 00 Healing routine.
+org $c1d221     ; Write over the Tech mode 00 Healing routine.
 nop #29         ; We use this space to jump to FlowController, for the new healing routine, and for the Regen effect.
 
-org $01d267     ; Write over the Tech mode 02 Status Impact routine.
+org $c1d267     ; Write over the Tech mode 02 Status Impact routine.
 nop #119        ; We use this space to jump to FlowController and for the new status impact routine.
 
 org $c1e3d0     ; Flow control for Tech modes 00 Healing, 02 Status Impact, and 07 Transfer HP/MP.
@@ -57,7 +57,7 @@ lda $ad8d
 bne .StartOfLoop; Loop if nonzero.
 rts
 
-org $01d221     ; Tech mode 00 Healing.
+org $c1d221     ; Tech mode 00 Healing.
 jmp $e3d0       ; Pass control to flow control routine.
 Healing:        ; Start status routine.
 jsr $d132       ; Load attacker's Magic and byte 2,3 of effect header.
@@ -66,7 +66,7 @@ lda #$00
 sta $b200
 rts             ; Some free bytes remain here, but we make use of them for the Regen effect.
 
-org $01d267     ; Tech mode 02 Status Impact.
+org $c1d267     ; Tech mode 02 Status Impact.
 jmp $e3d0       ; Pass control to flow control routine.
 StatusImpact:   ; Start Status routine.
 lda $ae4d       ; Load special bitflags.
@@ -117,20 +117,20 @@ rts             ; Free bytes remain, some of which are used for Regen/HP Down in
 ; edit the routine that sets status timer references at the start of battle to adjust the tick interval for Regen. This solution includes some logic
 ; to account for the player's Battle Speed setting.
 
-org $01e078 ; Location in Apply Status routine.
+org $c1e078 ; Location in Apply Status routine.
 beq $24     ; branch to test status mode 03 instead of jump to return.
 nop         ; we wrote over a JMP so NOP the 3rd byte.
 
-org $01e062 ; Location in the fragment that applies HP Down.
+org $c1e062 ; Location in the fragment that applies HP Down.
 jsr $d2b5   ; Clear Regen status. Overwritten lda opcode moved to child routine.
 
-org $01e091 ; Location in the fragment that sets Regen.
+org $c1e091 ; Location in the fragment that sets Regen.
 jsr $d2c7   ; Clear HP Down status. Overwritten lda opcode moved to child routine.
 
-org $01b93b ; Location of pointer for new status effect 07 "Regen" (RAM index).
+org $c1b93b ; Location of pointer for new status effect 07 "Regen" (RAM index).
 db $30, $d2 ; Little endian pointer to free space liberated in the Healing mode routine.
 
-org $01d230 ; Location of free space from old Healing effect routine.
+org $c1d230 ; Location of free space from old Healing effect routine.
 jsl $5f0300 ; Execute Regen effect.
 jsr $ebf8	; Load damage registers.
 jsr $ec7f	; Apply damage registers to HP/MP.
@@ -164,7 +164,7 @@ dec		    ; Subtract 1.
 tax		    ; Use as index to
 lda $b163,X	; Load battle ID of affected unit.
 tay		    ; Transfer battle ID to Y.
-rep #$20    ; Full disclosure I don't really understand the last 5 lines, I just copied them from similar status routines. They find the unit's battle ID.
+rep #$20    ; Full disclosure I don't really understand the last 6 lines, I just copied them from similar status routines. They find the unit's battle ID.
 xba
 lsr		    ; Convert battle ID to stat block offset.
 tax		    ; Transfer stat block offset to X.
@@ -193,7 +193,7 @@ sta $b202	; Store healing bitflag.
 .exit
 rtl
 
-org $3db50e ; Location where timer gets initialized.
+org $fdb50e ; Location where timer gets initialized.
 jsl $5f0360 ; Calculate and store timer reference.
 nop #4      ; Opcodes to store ATB moved to subroutine.
 
