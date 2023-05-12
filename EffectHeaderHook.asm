@@ -18,7 +18,7 @@ bne .Marle      ; Branch if not Crono.
 .Cyclone
 lda $b2c8       ; Load effect header.
 cmp #$01        ; Compare to one.
-bne .Marle      ; Branch if Tech is not Cyclone.
+bne .RainbowCap ; Branch if Tech is not Cyclone.
 lda $261c       ; Load Crono's upgrade memory byte.
 bit #$01        ; Test bit $01.
 beq .Marle      ; Branch if bit $01 not set.
@@ -27,6 +27,25 @@ lsr #2          ; /4
 clc
 adc $aeef       ; Add TP + TP/4.
 sta $aeef       ; Store 1.25*TP
+bra .Marle
+.RainbowCap
+lda $2627       ; Load Crono's equipped helm.
+cmp #$80        ; Compare to Rainbow Helm.
+bne .Marle      ; Branch if not equal.
+lda $b2c8       ; Load effect header.
+cmp #$03        ; Compare to Lightning.
+beq .LightningUp
+cmp #$05        ; Compare to Lightning 2.
+beq .LightningUp
+cmp #$08        ; Compare to Luminaire.
+beq .LightningUp
+bra .Marle      ; Branch if Tech is not lightning element.
+.LightningUp
+lda $aeef       ; Load Tech Power (isRainbowCap, isLightning both passed).
+lsr             ; /2
+clc
+adc $aeef       ; Add TP + TP/2.
+sta $aeef       ; Store 1.5*TP.
 .Marle
 lda $00         ; Load attacker's battle ID.
 tax
@@ -36,7 +55,7 @@ bne .Lucca      ; Branch if not Marle.
 .Aura
 lda $b2c8       ; Load effect header.
 cmp #$09        ; Compare to nine.
-bne .Lucca      ; Branch if Tech is not Aura.
+bne .MermaidCap ; Branch if Tech is not Aura.
 lda $266c       ; Load Marle's upgrade memory byte.
 bit #$10
 beq .Lucca      ; Branch if bit 10 not set.
@@ -44,6 +63,22 @@ lda #$02        ; Load two. (isMarle, isAura, isUpgraded all passed.)
 sta $aee9       ; Set status mode to 02.
 lda #$40
 sta $aeea       ; Set status bitflag to $40 (Regen).
+.MermaidCap
+lda $2677       ; Load Marle's equipped helmet.
+cmp #$83        ; Compare to MermaidCap.
+bne .Lucca
+lda $b2c8       ; Load effect header.
+cmp #$0b        ; Compare to Ice.
+beq .IceUp
+cmp #$0e        ; Compare to Ice 2.
+beq .IceUp
+bra .Lucca      ; Branch if Tech is not Water element.
+.IceUp
+lda $aeef       ; Load Tech Power (isMermaidCap, isWater both passed).
+lsr             ; /2
+clc
+adc $aeef       ; Add TP + TP/2.
+sta $aeef       ; Store 1.5*TP.
 .Lucca
 lda $00         ; Load attacker's battle ID.
 tax
@@ -69,10 +104,10 @@ cmp #$03        ; Compare to three.
 bne .Frog       ; Branch if not Robo.
 .LaserSpin
 lda $b2c8       ; Load effect header.
-cmp $1b
+cmp #$1b
 bne .CureBeam   ; Branch if Tech is not Laser Spin.
 lda $270c       ; Load Robo's upgrade memory byte.
-bit #$01
+bit #$01        ; Test bit $01.
 beq .Frog
 lda $aeef       ; Load Tech Power (isRobo, isLaserSpin, isUpgraded all passed).
 lsr #2          ; /4
@@ -82,7 +117,7 @@ sta $aeef       ; Store 1.25*TP
 bra .Frog
 .CureBeam
 lda $b2c8       ; Load effect header.
-cmp $1a
+cmp #$1a
 bne .Frog       ; Branch if Tech is not Cure Beam.
 lda $270c       ; Load Robo's upgrade memory byte.
 bit #$10        ; Test bit $10
@@ -101,7 +136,7 @@ cmp #$04        ; Compare to four.
 bne .Ayla       ; Branch if not Frog
 .SlurpCut
 lda $b2c8       ; Load Tech header
-cmp $22
+cmp #$22
 beq .SlurpCutUp ; Continue if Tech is Slurp Cut.
 cmp $40
 beq .SlurpCutUp ; Continue if Combo Tech uses Slurp Cut.
@@ -118,7 +153,7 @@ sta $aeef
 bra .Ayla
 .Water
 lda $b2c8       ; Load Tech header.
-cmp $23
+cmp #$23
 beq .WaterUp    ; Continue if Tech is Water.
 cmp $26
 beq .WaterUp    ; Continue if Tech is Water 2.
@@ -134,7 +169,7 @@ adc $aeef       ; Add TP + TP/4.
 sta $aeef       ; Store 1.25*TP
 .Heal
 lda $b2c8
-cmp $24
+cmp #$24
 bne .Ayla       ; Branch if Tech is not Heal.
 lda $275c       ; Load Frog's upgrade memory byte.
 bit #$20
@@ -152,14 +187,14 @@ cmp #$05        ; Compare to five.
 bne .Magus      ; Branch if not Ayla.
 .Kiss
 lda $b2c8       ; Load effect header.
-cmp $29
+cmp #$29
 bne .Magus      ; Branch if Tech is not Kiss.
 lda $27ac       ; Load Ayla's upgrade memory byte.
 bit #$10
 beq .Magus
-lda #$02        ; (isAyla, isKiss, isUpgraded all passed.)
+lda #$04        ; (isAyla, isKiss, isUpgraded all passed.)
 sta $aee9       ; Set status mode to 04.
-lda #$40
+lda #$20
 sta $aeea       ; Set status bitflag to $20 (MP Regen).
 .Magus
 lda $00         ; Load attacker's battle ID
@@ -169,7 +204,7 @@ cmp #$06        ; Compare to six.
 bne .Cleanup    ; Branch if not Magus.
 .DarkBomb
 lda $b2c8       ; Load effect header.
-cmp $34
+cmp #$34
 bne .Cleanup    ; Branch if Tech is not Dark Bomb.
 lda $27fc       ; Load Magus's upgrade memory byte.
 bit #$10

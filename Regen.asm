@@ -18,22 +18,32 @@ nop #421        ; Write over the unused section.
 org $c1d221     ; Write over the Tech mode 00 Healing routine.
 nop #29         ; We use this space to jump to FlowController, for the new healing routine, and for the Regen effect.
 
+org $c1d23e     ; Write over the Tech mode 01 Status Recovery routine.
+nop #41         ; Aura clears status, so I need to divert this Tech mode to allow Aura+ to apply Regen.
+
 org $c1d267     ; Write over the Tech mode 02 Status Impact routine.
 nop #119        ; We use this space to jump to FlowController and for the new status impact routine.
 
-org $c1e3d0     ; Flow control for Tech modes 00 Healing, 02 Status Impact, and 07 Transfer HP/MP.
+org $c1e3d0     ; Flow control for Tech modes 00 Healing, 01 Status Recovery, 02 Status Impact, and 07 Transfer HP/MP.
 FlowController:
 jsr $e9a3       ; Get attacker's stat block offset.
 .StartOfLoop
 jsr $e9b8       ; Get affected unit's stat block offset.
 lda $aee6       ; Load Tech mode.
-cmp #$02        ; If Tech mode == 02 Status Impact,
-beq .StatusMode ; Then branch to status mode.
+cmp #$01        ; Compare to 01 Status Recovery.
+beq .StatusRecovery
+cmp #$02        ; Compare Tech mode to 02 Status Impact.
+beq .StatusMode ; Branch if equal.
 jsr $d224       ; Else run healing routine.
 lda $aee6       ; Load Tech mode.
 cmp #$07        ; If Tech mode == 07 Transfer HP/MP,
 beq .CheckIndex ; Then branch to loop.
+bra .NotStatusMode
+.StatusRecovery
+jsr $d241       ; Recover status.
+.NotStatusMode
 tdc
+lda $aeed
 ora #$20
 sta $aeed       ; Set to always hit.
 lda $aee9       ; Load status mode.
@@ -65,6 +75,18 @@ jsr $da37       ; Apply healing.
 lda #$00
 sta $b200
 rts             ; Some free bytes remain here, but we make use of them for the Regen effect.
+
+org $c1d23e     ; Tech Mode 01 Status Recovery.
+jmp $e3d0       ; Pass control to flow control routine.
+StatusRecovery:
+jsr $d14f       ; Get byte 2 and 3 of effect header.
+jsr $db5e       ; Status recovery.
+lda $16
+bit #$40        ; Test restore HP mode.
+beq $06
+jsr $d132       ; Load attacker's Magic, byte 2 and 3 of effect header. 
+jsr $da37       ; Healing routine.
+rts
 
 org $c1d267     ; Tech mode 02 Status Impact.
 jmp $e3d0       ; Pass control to flow control routine.
