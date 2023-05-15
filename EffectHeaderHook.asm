@@ -138,7 +138,7 @@ bne .Ayla       ; Branch if not Frog
 lda $b2c8       ; Load Tech header
 cmp #$22
 beq .SlurpCutUp ; Continue if Tech is Slurp Cut.
-cmp $40
+cmp #$40
 beq .SlurpCutUp ; Continue if Combo Tech uses Slurp Cut.
 bra .Water
 .SlurpCutUp
@@ -155,7 +155,7 @@ bra .Ayla
 lda $b2c8       ; Load Tech header.
 cmp #$23
 beq .WaterUp    ; Continue if Tech is Water.
-cmp $26
+cmp #$26
 beq .WaterUp    ; Continue if Tech is Water 2.
 bra .Heal
 .WaterUp
