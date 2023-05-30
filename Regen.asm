@@ -192,6 +192,7 @@ lsr		    ; Convert battle ID to stat block offset.
 tax		    ; Transfer stat block offset to X.
 sta $10		; And store offset to $10 for some reason, just copied this from the original routine.
 tdc
+sta $ad89   ; Clear damage.
 sep #$20
 lda #$01	; Load one.
 sta $b003,Y	; Set Regen active.
@@ -203,6 +204,9 @@ and #$1fdf	; Clear Regen bit $20.
 sta $b186	; Store it.
 tdc
 sep #$20
+lda $5e4a,X ; Load PC dead byte.
+bit #$80    ; Test PC dead.
+bne .exit   ; If set, exit.
 lda $5e4c,X	; Load status byte 1.
 bit #$40	; Test Regen.
 beq .exit	; If not set, exit.
