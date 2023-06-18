@@ -26,6 +26,9 @@ cmp #$12        ; Compare to Hypno Wave.
 beq .Cleanup    ; Return if equal.
 cmp #$15        ; Compare to Shield.
 beq .Cleanup    ; Return if equal.
+lda $b2eb       ; Load second actor ID.
+cmp #$ff
+bne .Cleanup    ; Return if Combo Tech.
 tdc
 tax
 lda #$63        ; Return a value 0-99.
@@ -34,7 +37,7 @@ ldx $b1f4       ; Load attacker stat block offset.
 cmp #$32        ; Compare RNG result to fifty.
 bcs .Cleanup    ; Return if result is 50-99.
 lda $5e7c,X     ; Load 2x Tech memory.
-and #$7f        ; Clear bit $80. (isUpgraded, isFirstHit, RNG all passed.)
+and #$7f        ; Clear bit $80. (isUpgraded, isFirstHit, isDamagingTech, isSingleTech, RNG all passed.)
 sta $5e7c,X     ; Store memory.
 bra .Return     ; Return without setting bit.
 .Cleanup
