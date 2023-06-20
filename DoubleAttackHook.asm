@@ -10,11 +10,16 @@ nop
 org $5f00c0
 DoubleAttack:
 phx
+phy
 lda $aecc       ; Load attack target. The hook wrote over this and the next four lines.
 cmp $03
 bcc $05         ; Branch if target is PC.
 lda #$01
 sta $b2c0       ; Set counterattack flag
+ldx $b1f6       ; Load defender's stat block offset.
+ldy $5e30,X     ; Load defender's current HP.
+cpy #$0000      ; Compare to zero.
+beq .Cleanup    ; Return if enemy is dead.
 ldx $b1f4       ; Load attacker's battle stat block local offset.
 lda $5e49,X     ; Load attacker's upgrade byte.
 bit #$08        ; Test "2x attack" upgrade bit.
@@ -22,13 +27,15 @@ beq .Cleanup    ; Return if not set.
 lda $5e7c,X     ; Load attacker's temp memory byte (unused, default FF).
 bit #$01
 beq .Cleanup    ; Return if not set.
-and #$fe        ; Else clear bit 01. (isUpgraded, isFirstHit both passed.)
+and #$fe        ; Else clear bit 01. (targetIsAlive, isUpgraded, isFirstHit passed.)
 sta $5e7c,X     ; Store memory.
 bra .Return     ; Return without setting bit 01.
 .Cleanup
+ldx $b1f4       ; Load attacker stat block offset.
 lda $5e7c,X     ; Load 2x attack memory.
 ora #$01        ; Set bit 01.
 sta $5e7c,x     ; Store 2x attack memory.
 .Return
 plx
+ply
 rtl

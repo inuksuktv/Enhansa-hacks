@@ -1,13 +1,13 @@
 exhirom
 
 org $c1bc4a     ; Location in the Tech command stream after animation and some Charm processing.
-jsl $5f0070
+jsl $5f0060
 bit #$80        ; Test bit $80 of temp memory byte.
 bne $04         ; Continue if set.
 jsr $bb49       ; Else call another Tech.
 nop
 
-org $5f0070     ; Free space in expanded rom
+org $5f0060     ; Free space in expanded rom
 TechRepeater:   ; As we arrive, A holds control header. X holds PC ID.
 lda $aecc       ; The hook at $c1bc4a wrote over this and the next four lines.
 cmp #$03        ; Compare to three.
