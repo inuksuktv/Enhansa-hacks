@@ -24,12 +24,19 @@ ldx $b1f4       ; Load attacker's battle stat block local offset.
 lda $5e49,X     ; Load attacker's upgrade byte.
 bit #$08        ; Test "2x attack" upgrade bit.
 beq .Cleanup    ; Return if not set.
-lda $5e7c,X     ; Load attacker's temp memory byte (unused, default FF).
+lda $5e7c,X     ; Load attacker's temporary memory byte (unused, default FF).
 bit #$01
 beq .Cleanup    ; Return if not set.
+tdc
+tax
+lda #$63        ; Return a value 0-99.
+jsl $c1fdcb     ; RNG routine hook.
+ldx $b1f4       ; Load attacker stat block offset.
+cmp #$32        ; Compare RNG result to fifty.
+bcs .Cleanup    ; Return if result is 50-99.
 and #$fe        ; Else clear bit 01. (targetIsAlive, isUpgraded, isFirstHit passed.)
 sta $5e7c,X     ; Store memory.
-bra .Return     ; Return without setting bit 01.
+bra .Return     ; Return without setting bit 01 so that second attack fires.
 .Cleanup
 ldx $b1f4       ; Load attacker stat block offset.
 lda $5e7c,X     ; Load 2x attack memory.
