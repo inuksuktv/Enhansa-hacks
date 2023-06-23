@@ -17,14 +17,17 @@ cmp $03
 bcc $05         ; Branch if target is PC.
 lda #$01
 sta $b2c0       ; Set counterattack flag
+.isAlive
 ldx $b1f6       ; Load defender's stat block offset.
 ldy $5e30,X     ; Load defender's current HP.
 cpy #$0000      ; Compare to zero.
 beq .Cleanup    ; Return if enemy is dead.
+.isFirstAttack
 ldx $b1f4       ; Load attacker's battle stat block offset.
 lda $5e7c,X     ; Load attacker's temporary memory byte (unused, default FF).
 bit #$01
 beq .Cleanup    ; Return if not set.
+.isUpgraded
 lda $5e49,X     ; Load attacker's upgrade byte.
 bit #$08        ; Test "2x attack" upgrade bit.
 beq .NoUpgrade
