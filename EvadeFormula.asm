@@ -60,6 +60,16 @@ lda $18     ; Else load Evade.
 lsr         ; Evade / 2.
 inc         ; Add one.
 sta $18     ; Store Evade/2 + 1.
+.AttackerBlind
+ldx $b1f4   ; Load attacker stat block offset.
+lda $5e4b,X ; Load status.
+bit #$01    ; Test blind.
+beq .Return
+lda $18     ; Load Evade.
+cmp #$32    ; Compare to fifty.
+bcs .Return ; Return if greater than.
+lda #$32    ; Else load fifty.
+sta $18     ; Store Evade.
 .Return
 rts
 
@@ -74,7 +84,7 @@ sta $16     ; Store Miss%.
 tdc
 tax
 lda #$64
-jsr $af22   ; Generate random value.
+jsr $af22   ; Generate random value 0-99.
 cmp $16     ; Compare random value to Miss%.
 bcc .Miss   ; Branch if random value < Miss%.
 .Hit
