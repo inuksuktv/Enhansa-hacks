@@ -2,9 +2,9 @@ exhirom
 
 ; Tech Handling Section
 
-; This hack allows Tech mode 00 (Healing) to also apply status effects. The mode 00 and 02 (Status) routines are re-written from scratch to be able to
-; work together. Modes 00 and 02 both pass control to a new routine that will resolve any context conflicts of the effect header bytes between
-; modes. Mode 02 works the same as the base game. Mode 00 can read in four additional bytes to also apply a status.
+; This hack allows Tech mode 00 (Healing) to also apply status effects. The mode 00, 01 (status recovery) and 02 (Status impact) routines are re-written
+; from scratch to be able to work together. Modes 00 and 02 both pass control to a new routine that will resolve any context conflicts of the effect
+; header bytes between modes. Mode 02 works the same as the base game. Mode 00 can read in four additional bytes to also apply a status.
 
 ; Tech Mode 00 bytes 00-07 meaning: Tech mode, Healing Power, HP/MP healing, status mode, status bitflags, base success, bonus success, bit $20 always hit.
 
@@ -19,7 +19,7 @@ org $c1d221     ; Write over the Tech mode 00 Healing routine.
 nop #29         ; We use this space to jump to FlowController, for the new healing routine, and for the Regen effect.
 
 org $c1d23e     ; Write over the Tech mode 01 Status Recovery routine.
-nop #41         ; Aura clears status, so I need to divert this Tech mode to allow Aura+ to apply Regen.
+nop #41         ; We use this sapce to jump to FlowController and for the new Status Recovery routine.
 
 org $c1d267     ; Write over the Tech mode 02 Status Impact routine.
 nop #119        ; We use this space to jump to FlowController and for the new status impact routine.

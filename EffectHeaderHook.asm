@@ -92,9 +92,9 @@ bne .Robo       ; Branch if Tech is not Hypno Wave
 lda $26bc       ; Load Lucca's upgrade memory byte.
 bit #$01
 beq .Robo       ; Branch if bit 01 not set.
-lda $aeed       ; (isLucca, isHypnoWave, isUpgraded all passed.)
+lda $ae4d       ; (isLucca, isHypnoWave, isUpgraded all passed.)
 ora #$20
-sta $aeed       ; Set always hit flag.
+sta $ae4d       ; Set always hit flag.
 bra .Robo
 .Robo
 lda $00         ; Load attacker's battle ID.
