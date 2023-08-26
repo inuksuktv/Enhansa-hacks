@@ -134,3 +134,90 @@ ply
 plx
 plp
 rtl
+
+; The following section is to allow a repeated Tech to cast without sufficient MP.
+
+; This routine subtracts the MP cost from the PC's current MP during execution of the Tech.
+; The processor arrives with the Tech's mana cost in Y and the PC ID loaded in A.
+org $c1cc71
+nop #90
+org $c1cc71
+SubtractMP:
+PHP	
+PHX	
+PHY	
+CMP #$FF    ; Test actor ID.
+BEQ .Return ; Return if actor is not present.
+TAX	
+LDA $B1BE,X	; Load battle ID.
+TAX
+LDA $B3BA,X	; Load accessory.
+JSR $CBF6
+TYA	
+REP #$20
+STA $0E		; Store MP cost.
+TXA	
+XBA	
+LSR	
+TAX	
+LDA $5E34,X	; Load current MP.
+SEC
+SBC $0E		; Subtract current MP – MP cost.
+BPL $03
+LDA #$0000
+STA $5E34,X	; Store new current MP.
+.Return
+PLY	
+PLX	
+PLP
+RTS	
+
+; This routine checks the actor's current MP against the Tech's MP cost.
+; It's one byte too long.
+org $c1d76b
+CheckMP:
+txa
+xba
+lsr
+tax
+stx $ae5b
+tdc
+lda $b2d0
+asl
+tax
+lda $b18c
+jsr ($da31,X)
+tay
+ldx $2a
+lda $b3ba,X
+jsr $cbf6
+ldx $ae5b
+lda $5e7c,X
+bit #$80
+beq .ActorPassed
+rep #$20
+lda $5e34,X
+sta $ae5b
+tdc
+sep #$20
+cpy $ae5b
+beq .ActorPassed
+bcs .TechFailed
+nop
+lda $5e4b,X
+bit #$08
+bne .TechFailed
+.ActorPassed
+tdc
+inc $b2d0
+lda $b2d0
+cmp #$03
+bcc $9d
+bra $07
+.TechFailed
+lda #$ff
+sta $b3c8
+bra $04
+tdc
+sta $b3c8
+rts
