@@ -173,34 +173,35 @@ PLP
 RTS	
 
 ; This routine checks the actor's current MP against the Tech's MP cost.
-; It's one byte too long.
-org $c1d76b
+org $c1d769
 CheckMP:
+sta $2a         ; Store battle ID.
+tdc
+lda $b2d0       ; Load loop counter.
+asl
+tax
+lda $b18c       ; Load control header.
+jsr ($da31,X)   ; Get MP cost.
+tay             ; Transfer MP cost to Y.
+ldx $2a         ; Load battle ID.
+lda $b3ba,X     ; Load accessory.
+jsr $cbf6       ; Stud discount check.
+lda $2a         ; Load battle ID.
+rep #$20        ; Set accumulator 16-bit.
 txa
 xba
 lsr
 tax
-stx $ae5b
-tdc
-lda $b2d0
-asl
-tax
-lda $b18c
-jsr ($da31,X)
-tay
-ldx $2a
-lda $b3ba,X
-jsr $cbf6
-ldx $ae5b
-lda $5e7c,X
+sep #$20        ; Set accumulator 8-bit.
+lda $5e7c,X     ; Load 2x Tech temporary memory.
 bit #$80
 beq .ActorPassed
 rep #$20
-lda $5e34,X
+lda $5e34,X     ; Load current MP.
 sta $ae5b
 tdc
 sep #$20
-cpy $ae5b
+cpy $ae5b       ; Compare MP cost to current MP.
 beq .ActorPassed
 bcs .TechFailed
 nop
@@ -216,8 +217,8 @@ bcc $9d
 bra $07
 .TechFailed
 lda #$ff
-sta $b3c8
+sta $b3c8       ; Store FF for failed Tech.
 bra $04
 tdc
-sta $b3c8
+sta $b3c8       ; Store 00 for passed Tech.
 rts
