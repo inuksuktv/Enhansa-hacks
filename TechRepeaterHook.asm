@@ -135,47 +135,15 @@ plx
 plp
 rtl
 
+; --------------------------------------------------------------------------------
+
 ; The following section is to allow a repeated Tech to cast without sufficient MP.
 
-; This routine subtracts the MP cost from the PC's current MP during execution of the Tech.
-; The processor arrives with the Tech's mana cost in Y and the PC ID loaded in A.
-org $c1cc71
-nop #90
-org $c1cc71
-SubtractMP:
-PHP	
-PHX	
-PHY	
-CMP #$FF    ; Test actor ID.
-BEQ .Return ; Return if actor is not present.
-TAX	
-LDA $B1BE,X	; Load battle ID.
-TAX
-LDA $B3BA,X	; Load accessory.
-JSR $CBF6
-TYA	
-REP #$20
-STA $0E		; Store MP cost.
-TXA	
-XBA	
-LSR	
-TAX	
-LDA $5E34,X	; Load current MP.
-SEC
-SBC $0E		; Subtract current MP – MP cost.
-BPL $03
-LDA #$0000
-STA $5E34,X	; Store new current MP.
-.Return
-PLY	
-PLX	
-PLP
-RTS	
-
 ; This routine checks the actor's current MP against the Tech's MP cost.
+; I've added a check on the 2x Tech memory to bypass the MP test if the PC is currently casting a repeated Tech.
 org $c1d769
 CheckMP:
-sta $2a         ; Store battle ID.
+stx $32         ; Store battle ID.
 tdc
 lda $b2d0       ; Load loop counter.
 asl
@@ -183,10 +151,10 @@ tax
 lda $b18c       ; Load control header.
 jsr ($da31,X)   ; Get MP cost.
 tay             ; Transfer MP cost to Y.
-ldx $2a         ; Load battle ID.
+ldx $32         ; Load battle ID.
 lda $b3ba,X     ; Load accessory.
 jsr $cbf6       ; Stud discount check.
-lda $2a         ; Load battle ID.
+lda $32         ; Load battle ID.
 rep #$20        ; Set accumulator 16-bit.
 txa
 xba
@@ -222,3 +190,38 @@ bra $04
 tdc
 sta $b3c8       ; Store 00 for passed Tech.
 rts
+
+; This routine subtracts the MP cost from the PC's current MP during execution of the Tech.
+; Now that we can arrive here with insufficient MP, this routine can return a negative number. I added a floor of zero to the subtraction.
+org $c1cc71
+nop #90
+org $c1cc71
+SubtractMP:
+PHP	
+PHX	
+PHY	
+CMP #$FF    ; Test actor ID.
+BEQ .Return ; Return if actor is not present.
+TAX	
+LDA $B1BE,X	; Load battle ID.
+TAX
+LDA $B3BA,X	; Load accessory.
+JSR $CBF6
+TYA	
+REP #$20
+STA $0E		; Store MP cost.
+TXA	
+XBA	
+LSR	
+TAX	
+LDA $5E34,X	; Load current MP.
+SEC
+SBC $0E		; Subtract current MP – MP cost.
+BPL $03
+LDA #$0000
+STA $5E34,X	; Store new current MP.
+.Return
+PLY	
+PLX	
+PLP
+RTS         ; 45 bytes of new free space here.
