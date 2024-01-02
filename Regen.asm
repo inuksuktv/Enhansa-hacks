@@ -19,7 +19,7 @@ org $c1d221     ; Write over the Tech mode 00 Healing routine.
 nop #29         ; We use this space to jump to FlowController, for the new healing routine, and for the Regen effect.
 
 org $c1d23e     ; Write over the Tech mode 01 Status Recovery routine.
-nop #41         ; We use this sapce to jump to FlowController and for the new Status Recovery routine.
+nop #41         ; We use this space to jump to FlowController and for the new Status Recovery routine.
 
 org $c1d267     ; Write over the Tech mode 02 Status Impact routine.
 nop #119        ; We use this space to jump to FlowController and for the new status impact routine.
@@ -176,7 +176,7 @@ sta $b00e,X ; Clear HP Down bitflag
 lda $b121,X ; Load Regen timer reference to store it when we return from this routine.
 rts
 
-org $5f0300 ; Vanilla free space.
+org $5f0300 ; Expanded free space.
 Main:
 tdc
 lda $b180	; Regen is status effect 07 (RAM order) so load $B179+7.

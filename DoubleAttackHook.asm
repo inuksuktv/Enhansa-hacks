@@ -43,7 +43,7 @@ bne .Cleanup    ; Return if not equipped.
 .RNG
 tdc
 tax
-lda #$63        ; Return a value 0-99.
+lda #$64        ; Return a value 0-99.
 jsl $c1fdcb     ; Call RNG routine.
 ldx $b1f4       ; Load attacker stat block offset.
 cmp #$32        ; Compare RNG result to fifty.

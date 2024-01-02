@@ -69,7 +69,7 @@ lda $18     ; Load Evade.
 cmp #$32    ; Compare to fifty.
 bcs .Return ; Return if greater than.
 lda #$32    ; Else load fifty.
-sta $18     ; Store Evade.
+sta $18     ; Store Evade0
 .Return
 rts
 
